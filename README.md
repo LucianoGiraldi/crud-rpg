@@ -1,86 +1,121 @@
-# RPG Character Management System
+# Sistema de Gerenciamento de RPG
 
-A NestJS-based API for managing RPG characters and magic items.
+Sistema para gerenciamento de personagens e itens mágicos de RPG, desenvolvido com NestJS e MongoDB.
 
-## Features
+## Funcionalidades
 
-- Character management (create, read, update, delete)
-- Magic items management
-- Character class system
-- Item type system with specific rules
-- Character-Item relationship management
-- Swagger API documentation
+- Gerenciamento completo de personagens
+- Sistema de itens mágicos
+- Distribuição de pontos entre força e defesa
+- Diferentes classes de personagens
+- Sistema de níveis
+- Documentação completa via Swagger
 
-## Requirements
+## Requisitos
 
-- Node.js (v14 or higher)
-- MongoDB
-- npm or yarn
+- Node.js (v14 ou superior)
+- MongoDB (v4.4 ou superior)
+- npm ou yarn
 
-## Installation
+## Instalação
 
+1. Clone o repositório:
 ```bash
-# Install dependencies
-npm install
-
-# Create .env file
-cp .env.example .env
-
-# Start the application
-npm run start:dev
+git clone https://github.com/seu-usuario/crud-rpg.git
+cd crud-rpg
 ```
 
-## API Documentation
+2. Instale as dependências:
+```bash
+npm install
+# ou
+yarn install
+```
 
-Once the application is running, you can access the Swagger documentation at:
+3. Configure as variáveis de ambiente:
+```bash
+cp .env.example .env
+```
+Edite o arquivo .env com suas configurações.
+
+4. Inicie o MongoDB:
+```bash
+# Certifique-se de que o MongoDB está rodando em sua máquina
+```
+
+5. Execute as migrações (se houver):
+```bash
+npm run migration:run
+# ou
+yarn migration:run
+```
+
+6. Inicie o servidor:
+```bash
+# Desenvolvimento
+npm run start:dev
+# ou
+yarn start:dev
+
+# Produção
+npm run start:prod
+# ou
+yarn start:prod
+```
+
+## Documentação da API
+
+A documentação completa da API está disponível via Swagger em:
 ```
 http://localhost:3000/api
 ```
 
-## Character System
+## Endpoints Principais
 
-Characters have the following attributes:
-- Name
-- Adventurer Name
-- Class (Guerreiro, Mago, Arqueiro, Ladino, Bardo)
-- Level
-- Strength (0-10)
-- Defense (0-10)
-- Magic Items
+### Personagens
 
-Total points for Strength and Defense cannot exceed 10.
+- `POST /characters` - Criar novo personagem
+- `GET /characters` - Listar todos os personagens
+- `GET /characters/:id` - Buscar personagem por ID
+- `PUT /characters/:id` - Atualizar personagem
+- `DELETE /characters/:id` - Remover personagem
+- `POST /characters/:id/magic-items` - Adicionar item mágico ao personagem
+- `GET /characters/:id/magic-items` - Listar itens mágicos do personagem
+- `DELETE /characters/:id/magic-items/:magicItemId` - Remover item mágico do personagem
+- `GET /characters/:id/amulets` - Buscar amuletos do personagem
 
-## Magic Items System
+### Itens Mágicos
 
-Magic Items have the following attributes:
-- Name
-- Type (Arma, Armadura, Amuleto)
-- Strength (0-10)
-- Defense (0-10)
+- `POST /magic-items` - Criar novo item mágico
+- `GET /magic-items` - Listar todos os itens mágicos
+- `GET /magic-items/:id` - Buscar item mágico por ID
 
-Rules:
-- Weapons must have 0 defense
-- Armor must have 0 strength
-- Amulets can have both strength and defense
-- Characters can only have one amulet
-- Items must have at least one non-zero attribute
+## Regras de Negócio
 
-## API Endpoints
+### Personagens
 
-### Characters
-- POST /characters - Create a character
-- GET /characters - List all characters
-- GET /characters/:id - Get character by ID
-- PATCH /characters/:id - Update character
-- DELETE /characters/:id - Delete character
-- POST /characters/:id/items/:itemId - Add item to character
-- DELETE /characters/:id/items/:itemId - Remove item from character
-- GET /characters/:id/amulet - Get character's amulet
+- 10 pontos para distribuir entre força e defesa
+- Classe fixa após criação
+- Level inicial 1
+- Classes disponíveis: Guerreiro, Mago, Arqueiro, Ladino, Bardo
 
-### Magic Items
-- POST /magic-items - Create a magic item
-- GET /magic-items - List all magic items
-- GET /magic-items/:id - Get magic item by ID
-- PATCH /magic-items/:id - Update magic item
-- DELETE /magic-items/:id - Delete magic item
-- GET /magic-items/character/:characterId - List character's items 
+### Itens Mágicos
+
+- Tipos: Arma, Armadura, Amuleto
+- Armas: defesa sempre zero
+- Armaduras: força sempre zero
+- Amuletos: podem ter força e defesa
+- Máximo de 1 amuleto por personagem
+- Valores de força e defesa não podem exceder 10
+
+## Contribuição
+
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes. 

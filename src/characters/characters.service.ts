@@ -5,7 +5,6 @@ import { Character } from './schemas/character.schema';
 import { CreateCharacterDto } from './dto/create-character.dto';
 import { UpdateCharacterDto } from './dto/update-character.dto';
 import { MagicItem } from '../magic-items/schemas/magic-item.schema';
-import { ItemType } from '../magic-items/schemas/magic-item.schema';
 
 @Injectable()
 export class CharactersService {
@@ -15,9 +14,10 @@ export class CharactersService {
   ) {}
 
   async create(createCharacterDto: CreateCharacterDto): Promise<Character> {
-    const totalPoints = createCharacterDto.strength + createCharacterDto.defense;
-    if (totalPoints > 10) {
-      throw new BadRequestException('Total points for strength and defense cannot exceed 10');
+    const { strength, defense } = createCharacterDto;
+    
+    if (strength + defense > 10) {
+      throw new BadRequestException('Total de pontos de força e defesa não pode exceder 10');
     }
 
     const createdCharacter = new this.characterModel(createCharacterDto);
@@ -25,112 +25,110 @@ export class CharactersService {
   }
 
   async findAll(): Promise<Character[]> {
-    return this.characterModel.find().populate('magicItems').exec();
+    return this.characterModel.find().exec();
   }
 
   async findOne(id: string): Promise<Character> {
-    const character = await this.characterModel.findById(id).populate('magicItems').exec();
+    const character = await this.characterModel.findById(id).exec();
     if (!character) {
-      throw new NotFoundException(`Character with ID ${id} not found`);
+      throw new NotFoundException('Personagem não encontrado');
     }
     return character;
   }
 
   async update(id: string, updateCharacterDto: UpdateCharacterDto): Promise<Character> {
-    if (updateCharacterDto.strength !== undefined && updateCharacterDto.defense !== undefined) {
-      const totalPoints = updateCharacterDto.strength + updateCharacterDto.defense;
-      if (totalPoints > 10) {
-        throw new BadRequestException('Total points for strength and defense cannot exceed 10');
-      }
+    const character = await this.characterModel.findById(id).exec();
+    if (!character) {
+      throw new NotFoundException('Personagem não encontrado');
     }
 
-    const updatedCharacter = await this.characterModel
-      .findByIdAndUpdate(id, updateCharacterDto, { new: true })
-      .populate('magicItems')
-      .exec();
-
-    if (!updatedCharacter) {
-      throw new NotFoundException(`Character with ID ${id} not found`);
+    if (updateCharacterDto.name) {
+      character.name = updateCharacterDto.name;
     }
 
-    return updatedCharacter;
+    return character.save();
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.characterModel.findByIdAndDelete(id).exec();
-    if (!result) {
-      throw new NotFoundException(`Character with ID ${id} not found`);
+  async remove(id: string): Promise<Character> {
+    const character = await this.characterModel.findById(id).exec();
+    if (!character) {
+      throw new NotFoundException('Personagem não encontrado');
     }
+    return this.characterModel.findByIdAndDelete(id).exec();
   }
 
   async addMagicItem(characterId: string, magicItemId: string): Promise<Character> {
-    const character = await this.characterModel.findById(characterId);
+    const character = await this.characterModel.findById(characterId).exec();
     if (!character) {
-      throw new NotFoundException(`Character with ID ${characterId} not found`);
+      throw new NotFoundException('Personagem não encontrado');
     }
 
-    const magicItem = await this.magicItemModel.findById(magicItemId);
+    const magicItem = await this.magicItemModel.findById(magicItemId).exec();
     if (!magicItem) {
-      throw new NotFoundException(`Magic item with ID ${magicItemId} not found`);
+      throw new NotFoundException('Item mágico não encontrado');
     }
 
-    // Check if character already has an amulet when adding a new amulet
-    if (magicItem.type === ItemType.AMULET) {
-      const existingAmulet = await this.magicItemModel.findOne({
-        character: characterId,
-        type: ItemType.AMULET,
-      });
-      if (existingAmulet) {
-        throw new BadRequestException('Character already has an amulet');
+    // Verificar se o personagem já possui um amuleto quando tentar adicionar outro
+    if (magicItem.type === 'Amuleto') {
+      const hasAmulet = character.magicItems.some(item => 
+        item.toString() === magicItemId || 
+        (item as any).type === 'Amuleto'
+      );
+      if (hasAmulet) {
+        throw new BadRequestException('Personagem já possui um amuleto');
       }
     }
 
-    magicItem.character = characterId;
-    await magicItem.save();
-
-    if (!character.magicItems.includes(magicItemId)) {
-      character.magicItems.push(magicItemId);
-      await character.save();
+    // Verificar regras específicas para Armas e Armaduras
+    if (magicItem.type === 'Arma' && magicItem.defense !== 0) {
+      throw new BadRequestException('Armas devem ter defesa zero');
+    }
+    if (magicItem.type === 'Armadura' && magicItem.strength !== 0) {
+      throw new BadRequestException('Armaduras devem ter força zero');
     }
 
-    return this.characterModel.findById(characterId).populate('magicItems').exec();
+    character.magicItems.push(magicItemId);
+    return character.save();
+  }
+
+  async getCharacterMagicItems(characterId: string): Promise<MagicItem[]> {
+    const character = await this.characterModel
+      .findById(characterId)
+      .populate('magicItems')
+      .exec();
+    
+    if (!character) {
+      throw new NotFoundException('Personagem não encontrado');
+    }
+
+    return character.magicItems as MagicItem[];
   }
 
   async removeMagicItem(characterId: string, magicItemId: string): Promise<Character> {
-    const character = await this.characterModel.findById(characterId);
+    const character = await this.characterModel.findById(characterId).exec();
     if (!character) {
-      throw new NotFoundException(`Character with ID ${characterId} not found`);
+      throw new NotFoundException('Personagem não encontrado');
     }
 
-    const magicItem = await this.magicItemModel.findById(magicItemId);
-    if (!magicItem) {
-      throw new NotFoundException(`Magic item with ID ${magicItemId} not found`);
+    const itemIndex = character.magicItems.indexOf(magicItemId);
+    if (itemIndex === -1) {
+      throw new NotFoundException('Item mágico não encontrado no personagem');
     }
 
-    if (magicItem.character?.toString() !== characterId) {
-      throw new BadRequestException('Magic item is not owned by this character');
-    }
-
-    magicItem.character = null;
-    await magicItem.save();
-
-    character.magicItems = character.magicItems.filter(
-      (itemId) => itemId.toString() !== magicItemId,
-    );
-    await character.save();
-
-    return this.characterModel.findById(characterId).populate('magicItems').exec();
+    character.magicItems.splice(itemIndex, 1);
+    return character.save();
   }
 
-  async getCharacterAmulet(characterId: string): Promise<MagicItem | null> {
-    const character = await this.characterModel.findById(characterId);
+  async getCharacterAmulets(characterId: string): Promise<MagicItem[]> {
+    const character = await this.characterModel
+      .findById(characterId)
+      .populate('magicItems')
+      .exec();
+    
     if (!character) {
-      throw new NotFoundException(`Character with ID ${characterId} not found`);
+      throw new NotFoundException('Personagem não encontrado');
     }
 
-    return this.magicItemModel.findOne({
-      character: characterId,
-      type: ItemType.AMULET,
-    });
+    return (character.magicItems as MagicItem[]).filter(item => item.type === 'Amuleto');
   }
 } 

@@ -6,10 +6,8 @@ import { MagicItemsModule } from './magic-items/magic-items.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/rpg-system'),
+    ConfigModule.forRoot(),
+    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/rpg-game'),
     CharactersModule,
     MagicItemsModule,
   ],

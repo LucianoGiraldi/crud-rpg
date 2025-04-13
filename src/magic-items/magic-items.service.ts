@@ -13,31 +13,40 @@ export class MagicItemsService {
   ) {}
 
   async create(createMagicItemDto: CreateMagicItemDto): Promise<MagicItem> {
-    // Validate item type constraints
-    if (createMagicItemDto.type === ItemType.WEAPON && createMagicItemDto.defense !== 0) {
-      throw new BadRequestException('Weapons must have 0 defense');
+    const { type, strength, defense } = createMagicItemDto;
+
+    // Validar regras específicas para cada tipo de item
+    if (type === 'Arma' && defense !== 0) {
+      throw new BadRequestException('Armas devem ter defesa zero');
     }
-    if (createMagicItemDto.type === ItemType.ARMOR && createMagicItemDto.strength !== 0) {
-      throw new BadRequestException('Armor must have 0 strength');
-    }
-    if (createMagicItemDto.strength === 0 && createMagicItemDto.defense === 0) {
-      throw new BadRequestException('Item must have at least one non-zero attribute');
+    if (type === 'Armadura' && strength !== 0) {
+      throw new BadRequestException('Armaduras devem ter força zero');
     }
 
-    const createdItem = new this.magicItemModel(createMagicItemDto);
-    return createdItem.save();
+    // Validar valores máximos
+    if (strength > 10 || defense > 10) {
+      throw new BadRequestException('Valores de força e defesa não podem exceder 10');
+    }
+
+    // Validar que não pode ter força e defesa zero
+    if (strength === 0 && defense === 0) {
+      throw new BadRequestException('Item não pode ter força e defesa zero');
+    }
+
+    const createdMagicItem = new this.magicItemModel(createMagicItemDto);
+    return createdMagicItem.save();
   }
 
   async findAll(): Promise<MagicItem[]> {
-    return this.magicItemModel.find().populate('character').exec();
+    return this.magicItemModel.find().exec();
   }
 
   async findOne(id: string): Promise<MagicItem> {
-    const item = await this.magicItemModel.findById(id).populate('character').exec();
-    if (!item) {
-      throw new NotFoundException(`Magic item with ID ${id} not found`);
+    const magicItem = await this.magicItemModel.findById(id).exec();
+    if (!magicItem) {
+      throw new NotFoundException('Item mágico não encontrado');
     }
-    return item;
+    return magicItem;
   }
 
   async update(id: string, updateMagicItemDto: UpdateMagicItemDto): Promise<MagicItem> {
@@ -59,7 +68,6 @@ export class MagicItemsService {
 
     const updatedItem = await this.magicItemModel
       .findByIdAndUpdate(id, updateMagicItemDto, { new: true })
-      .populate('character')
       .exec();
 
     return updatedItem;

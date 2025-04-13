@@ -1,27 +1,21 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule } from '@nestjs/swagger';
+import { swaggerConfig } from './swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable validation pipes
+  // Configuração do ValidationPipe
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
+    forbidNonWhitelisted: true,
   }));
 
-  // Swagger documentation setup
-  const config = new DocumentBuilder()
-    .setTitle('RPG Character Management System')
-    .setDescription('API for managing RPG characters and magic items')
-    .setVersion('1.0')
-    .addTag('characters', 'Character management endpoints')
-    .addTag('magic-items', 'Magic items management endpoints')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
+  // Configuração do Swagger
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
 
   await app.listen(3000);
