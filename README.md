@@ -21,7 +21,7 @@ Sistema para gerenciamento de personagens e itens mágicos de RPG, desenvolvido 
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/crud-rpg.git
+git clone https://github.com/LucianoGiraldi/crud-rpg.git
 cd crud-rpg
 ```
 
